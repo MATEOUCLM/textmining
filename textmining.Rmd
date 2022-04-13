@@ -39,7 +39,6 @@ packages <- c("tidyr",
               "knitr",
               "wordcloud",
               "reshape2")
-
 installed_packages <- packages %in% 
   rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -108,12 +107,10 @@ En tercer lugar, se han eliminado las filas en blanco, así como los cambios de 
 text_olivertwist <-
   text_olivertwist %>% 
   slice((1:3894))
-
 # Quitando renglones vacíos
 text_olivertwist <-
   text_olivertwist %>%
-  filter(!texto %in% c("",
-                       "")) %>%
+  filter(!texto %in% c(" ", "")) %>%
   mutate_all(trimws)
 ```
 
@@ -124,7 +121,6 @@ En cuarto lugar, se han agrupado los párrafos por capítulos y se ha _tokenizad
 text_olivertwist %>%
   filter(grepl("CHAPTER",
                texto))
-
 text_olivertwist <-
   text_olivertwist %>%
   mutate(capitulo = ifelse(grepl("CHAPTER", 
@@ -132,7 +128,6 @@ text_olivertwist <-
                            texto, NA)) %>%
   fill(capitulo) %>%
   filter(texto != capitulo)
-
 # Tokenizando
 tidy_olivertwist <- 
   text_olivertwist %>%
@@ -152,7 +147,6 @@ Para realizar todo lo comentado se han importado las palabras del repositorio _B
 # Importando las palabras de bing
 bing <- 
   get_sentiments("bing")
-
 # Creando el objeto sentimiento que analiza las palabras de la novela que coinciden con las del repositorio bing
 sentimiento <-
   left_join(x = tidy_olivertwist,
@@ -161,21 +155,17 @@ sentimiento <-
   count(word, 
         sentiment, 
         sort = TRUE)
-
 # Eliminando del objeto sentimiento las palabras de la novela que no están en bing (missing values)
 sentimiento <- 
   drop_na(sentimiento)
-
 # Objeto que recoge las palabras que se repiten mas de 25 veces
 sentimiento_filtrado <- 
   sentimiento %>% 
   filter(n > 25)
-
 # Creando el objeto de palabras positivas
 sentimiento_positivo <-
   sentimiento_filtrado %>% 
   filter(sentiment == "positive")
-
 # Creando el objeto de palabras negativas
 sentimiento_negativo <-
   sentimiento_filtrado %>%
@@ -224,7 +214,6 @@ Si se refleja en una tabla la información anterior, se podrá ver cómo la frec
 sentimiento_positivo %>% 
   head(10) %>% 
   kable()
-
 sentimiento_negativo %>% 
   head(10) %>% 
   kable()
@@ -240,15 +229,12 @@ sentimiento_capitulo <-
             y = bing,
             by = "word") %>% 
   drop_na()
-
 sentimiento_capitulo <-
   sentimiento_capitulo %>% 
   group_by(capitulo)
-
 capitulo_positivo <-
   sentimiento_capitulo %>%
   filter(sentiment == "positive")
-
 capitulo_negativo <-
   sentimiento_capitulo %>%
   filter(sentiment == "negative")
@@ -272,9 +258,9 @@ capitulo_negativo %>%
 
 # Nube de palabras
 
-Párrafo introductorio
+En este apartado, haremos una nube de palabras para representar las palabras más comunes a lo largo del libro. Así, no sólo veremos las más frecuentes sino que a través del tamaño veremos su importancia de un solo vistazo. 
 
-Explicación 1
+Llevamos a cabo este proceso dos veces: una para todo el vocabulario del libro
 
 ```{r nube1}
 tidy_olivertwist %>%
@@ -284,7 +270,10 @@ tidy_olivertwist %>%
                 max.words = 150))
 ```
 
-Explicación 2
+En la que destacan personajes (Oliver Twist, Bumble, Fagin, un judío -y no judíos en plural, con lo que es posible que un personaje sea caracterizado así en vez de una comunidad-, un doctor, Noah), elementos que nos dan una visión de la ambientación( _boy_, _girl_, _gentleman_, _sir_, _child_, _fire_, 
+_hat_) que es de la vida infantil de la inglaterra de los años 1830. Por último, hay palabras que bien podrían estar en cualquier libro ( _door_, _head_, _eyes_, _time_, _hand_, _day_, _night_ ).
+
+En segundo lugar, hacemos una nube de palabras sólo con las palabras que tienen un significado positivo o negativo, de manera que sabemos que tendrán un significado relevante para nuestro análisis
 
 ```{r nube2}
 tidy_olivertwist %>%
@@ -300,11 +289,12 @@ tidy_olivertwist %>%
  max.words = 150)
 ```
 
+En la que vemos, de igual manera que vimos gracias a la tabla en el anterior apartado, que master tiene una frecuencia muy alta. Dentro del resto de palabras positivas, vemos algunas que tienen un deje de tristeza, como _heaven_, _quiet_, _silent_ o incluso _fine_ (recordemos que también significa multa). Las palabras negativas que más aparecen son _poor_, _cold_, _dark_ y _dead_. Aparece twist pero al ser el apellido del protagonista, no la debemos tomar en cuenta como palabra negativa. 
+
 # Frecuencia de palabras
 
-Párrafo introductorio
+Vamos a explorar qué palabras aparecen más veces en el libro, a través de una tabla y de un gráfico. Ya que es la misma información que en la nube de palabras número uno, veremos muchas palabras repetidas, sin embargo, al estar en un formato menos gráfico pero más completo y preciso, en el que veremos cuántas veces se repite exactamente cada palabra, podremos ver con más detalle las características del texto.
 
-Explicación 1
 
 ```{r frec1}
 # Palabras más frecuentes
@@ -312,9 +302,9 @@ tidy_olivertwist %>%
   count(word,
         sort = TRUE)
 ```
-
-Explicación 2
-
+Vemos que la palabra más frecuente es el nombre de pila del protagonista, que se menciona casi 700 veces. Llaman la atención palabras de estilo que se repiten mucho,  como _replied_ , _time_ o incluso _dear_. También son muy frecuentes nombres de personajes, como Fagin, Sikes o  Bumble. 
+Se nos ha escapado alguna palabra vacía como _don't_ o _it's_ que al ser contracciones no aparecen en la base de stop words que hemos usado.
+También podemos navegar en las palabras que eran demasiado raras para aparecer en la nube de texto pero son suficienteme frecuentes como para tener un impacto en el texto, como los verbos usados( _spoke_, _stood_, _brittles_, _stopped_, _appeared_, _fell_, _cried_) en el texto, que también nos da una idea de lo que pasa en el libro, con acciones físicas como caídas y paradas y acciones más literarias como hablar, aparecer o llorar.
 ```{r frec2}
 # Gráfico de frecuencia de palabras
 frequency <-
@@ -322,10 +312,8 @@ frequency <-
   count(word,
         sort = TRUE,) %>% 
   mutate(proportion = n / sum(n))
-
 frequency <- frequency %>% 
   slice(1:75)
-
 ggplot(frequency,
        aes(word,
            proportion))+
@@ -337,7 +325,7 @@ ggplot(frequency,
   ylab("Frecuencia") +
   xlab("Palabra")
 ```
-
+El gráfico nos sirve para ver mejor las frecuencias de cada palabra, ya que en el resto de representaciones hemos visto la frecuencia en valores absolutos. Desde luego, al ser una obra extensa, no hay palabras tan comunes. Si fuese un cuento, veríamos frecuencias relativas más altas.
 # Conclusiones
 
 Párrafo 1
